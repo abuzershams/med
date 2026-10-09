@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Unzip project
+        run: |
+          ls
+          unzip -q medflow-complete.zip -d app
+          ls app
+      - name: Install
+        working-directory: app
+        run: npm install --legacy-peer-deps --no-audit --no-fund --ignore-scripts
+      - name: Build web app
+        working-directory: app
+        run: npm run build
+      - name: Create Android project
+        working-directory: app
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Build APK
+        working-directory: app/android
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MedFlow-Android-APK
+          path: app/android/app/build/outputs/apk/debug/*.apk
